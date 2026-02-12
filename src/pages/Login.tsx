@@ -1,34 +1,54 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { DEFAULT_EMAIL, DEFAULT_PASSWORD, ensureDefaultUser } from "@/lib/supabase-helpers";
 import heroBg from "@/assets/hero-bg.jpg";
 import img75hard1 from "@/assets/75hard1.jpg";
 import download1 from "@/assets/download1.jpg";
 import download2 from "@/assets/download2.jpg";
-import download3 from "@/assets/download3.jpg";
 
 const Login = () => {
-  const [email, setEmail] = useState(DEFAULT_EMAIL);
-  const [password, setPassword] = useState(DEFAULT_PASSWORD);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // ✅ LOGIN FUNCTION
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // If using default creds, ensure user exists
-      if (email === DEFAULT_EMAIL && password === DEFAULT_PASSWORD) {
-        await ensureDefaultUser();
-      }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
+
       navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ SIGNUP FUNCTION
+  const handleSignup = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (signUpError) throw signUpError;
+
+      alert("Signup successful! You can now login.");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -38,7 +58,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
-      {/* Blurred background photos collage */}
+      {/* Background collage */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 grid grid-cols-3 gap-0 opacity-20">
           <img src={heroBg} alt="" className="w-full h-full object-cover blur-sm" />
@@ -48,7 +68,7 @@ const Login = () => {
         <div className="absolute inset-0 bg-background/85" />
       </div>
 
-      {/* Left side - hero image */}
+      {/* Left side */}
       <div className="relative z-10 lg:w-1/2 h-64 lg:h-auto overflow-hidden">
         <img
           src={heroBg}
@@ -66,15 +86,15 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right side - login */}
+      {/* Right side */}
       <div className="relative z-10 flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md space-y-8">
           <div>
             <h2 className="font-display text-4xl text-foreground tracking-wide">
-              WELCOME BACK
+              WELCOME
             </h2>
             <p className="text-muted-foreground mt-2">
-              Sign in to continue your challenge
+              Sign in or create an account to start your challenge
             </p>
           </div>
 
@@ -111,6 +131,7 @@ const Login = () => {
               <p className="text-destructive text-sm">{error}</p>
             )}
 
+            {/* LOGIN BUTTON */}
             <button
               type="submit"
               disabled={loading}
@@ -118,17 +139,17 @@ const Login = () => {
             >
               {loading ? "Signing in..." : "START THE GRIND"}
             </button>
-          </form>
 
-          <div className="glass-card p-4 flex items-center gap-4">
-            <img src={img75hard1} alt="75 Hard" className="w-16 h-16 rounded-lg object-cover" />
-            <div>
-              <p className="text-foreground text-sm font-medium">Default Login</p>
-              <p className="text-muted-foreground text-xs">
-                {DEFAULT_EMAIL} / {DEFAULT_PASSWORD}
-              </p>
-            </div>
-          </div>
+            {/* SIGNUP BUTTON */}
+            <button
+              type="button"
+              onClick={handleSignup}
+              disabled={loading}
+              className="w-full py-3 rounded-lg border border-border text-foreground font-semibold text-lg hover:bg-secondary transition-all disabled:opacity-50"
+            >
+              {loading ? "Creating account..." : "CREATE ACCOUNT"}
+            </button>
+          </form>
         </div>
       </div>
     </div>
