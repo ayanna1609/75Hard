@@ -16,6 +16,10 @@ const Login = () => {
   // ✅ LOGIN FUNCTION
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      setError("Please fill in both email and password.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -37,6 +41,10 @@ const Login = () => {
 
   // ✅ SIGNUP FUNCTION
   const handleSignup = async () => {
+    if (!email || !password) {
+      setError("Please fill in both email and password to create an account.");
+      return;
+    }
     setLoading(true);
     setError("");
 
