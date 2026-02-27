@@ -78,22 +78,24 @@ const Dashboard = () => {
         <div className="absolute inset-0 bg-background/90" />
       </div>
       {/* Header */}
-      <header className="relative z-10 border-b border-border">
+      <header className="relative z-10 border-b border-border/50 bg-background/50 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={img75hard2} alt="75 Hard" className="w-10 h-10 rounded-xl object-cover" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+              <Trophy className="w-5 h-5 text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
+            </div>
             <div>
               <h1 className="font-display text-2xl text-foreground tracking-wide leading-none">
-                75 <span className="text-gradient">HARD</span>
+                75 <span className="text-gradient font-bold drop-shadow-sm">HARD</span>
               </h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1 ml-0.5 opacity-80">
                 {profile?.display_name || "Challenger"}
               </p>
             </div>
           </div>
           <button
             onClick={handleSignOut}
-            className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground transition-all"
+            className="p-2 rounded-lg bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all border border-transparent hover:border-border/50"
           >
             <LogOut className="w-5 h-5" />
           </button>
@@ -112,8 +114,8 @@ const Dashboard = () => {
               {streak >= 30
                 ? "UNSTOPPABLE! You're a machine! 🔥"
                 : streak >= 14
-                ? "Two weeks strong! Keep pushing! 💪"
-                : "One week down! Momentum is building! ⚡"}
+                  ? "Two weeks strong! Keep pushing! 💪"
+                  : "One week down! Momentum is building! ⚡"}
             </p>
           </div>
         )}
@@ -122,21 +124,19 @@ const Dashboard = () => {
         <div className="flex gap-1 p-1 bg-secondary rounded-xl">
           <button
             onClick={() => setActiveTab("tasks")}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "tasks"
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "tasks"
                 ? "gradient-green text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Daily Tasks
           </button>
           <button
             onClick={() => setActiveTab("photos")}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "photos"
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "photos"
                 ? "gradient-green text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             Progress Photos
           </button>
