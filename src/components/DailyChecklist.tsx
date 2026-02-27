@@ -102,7 +102,7 @@ const DailyChecklist = ({ onUpdate }: Props) => {
   const allDone = completedCount === 7;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-2xl text-foreground tracking-wide">TODAY'S TASKS</h3>
         <span className={`text-sm font-semibold px-3 py-1 rounded-full ${allDone ? "gradient-green text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>
@@ -110,52 +110,55 @@ const DailyChecklist = ({ onUpdate }: Props) => {
         </span>
       </div>
 
-      {TASKS.map((task, i) => {
-        const done = checkin[task.key];
-        const Icon = task.icon;
-        return (
-          <button
-            key={task.key}
-            onClick={() => toggleTask(task.key)}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 relative overflow-hidden group ${done
-              ? "border-primary/50 text-foreground"
-              : "border-border/50 text-foreground hover:border-primary/50"
-              }`}
-            style={{ animationDelay: `${i * 0.05}s` }}
-          >
-            {/* Background Image Layer */}
-            <div
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-              style={{ backgroundImage: `url(${task.bg})` }}
-            />
-
-            {/* Overlay */}
-            <div
-              className={`absolute inset-0 transition-all duration-300 ${done ? "bg-black/80 backdrop-blur-[2px]" : "bg-black/60 group-hover:bg-black/40"}`}
-            />
-
-            {/* Content Container */}
-            <div className="relative z-10 flex items-center gap-4 w-full">
+      {/* Changed to a grid layout to make square/tall cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {TASKS.map((task, i) => {
+          const done = checkin[task.key];
+          const Icon = task.icon;
+          return (
+            <button
+              key={task.key}
+              onClick={() => toggleTask(task.key)}
+              className={`w-full aspect-[4/5] flex flex-col justify-end p-4 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${done
+                ? "border-primary text-foreground"
+                : "border-border/50 text-foreground hover:border-primary/50"
+                }`}
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
+              {/* Background Image Layer - Now shows almost the whole image */}
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${done ? "gradient-green glow-green" : "bg-background/20 backdrop-blur-md border border-white/10"
-                  } ${animatingKey === task.key ? "animate-check" : ""}`}
-              >
-                {done ? (
-                  <Check className="w-5 h-5 text-primary-foreground" />
-                ) : (
-                  <Icon className="w-5 h-5 text-white/80" />
-                )}
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                style={{ backgroundImage: `url(${task.bg})` }}
+              />
+
+              {/* Gradient Overlay just at the bottom for text readability */}
+              <div
+                className={`absolute inset-0 transition-all duration-300 ${done ? "bg-black/40" : "bg-gradient-to-t from-black/80 via-black/10 to-transparent group-hover:from-black/90"}`}
+              />
+
+              {/* Content Container positioned at the bottom */}
+              <div className="relative z-10 flex flex-col items-start gap-3 w-full text-left">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ${done ? "gradient-green glow-green" : "bg-white/10 backdrop-blur-md border border-white/20"
+                    } ${animatingKey === task.key ? "animate-check" : ""}`}
+                >
+                  {done ? (
+                    <Check className="w-5 h-5 text-primary-foreground" />
+                  ) : (
+                    <Icon className="w-5 h-5 text-white" />
+                  )}
+                </div>
+                <div>
+                  <p className={`text-base font-bold transition-all tracking-wide ${done ? "text-white line-through opacity-60" : "text-white drop-shadow-md"}`}>
+                    {task.label}
+                  </p>
+                  <p className="text-xs font-medium text-white/70 drop-shadow-md mt-0.5 line-clamp-1">{task.desc}</p>
+                </div>
               </div>
-              <div className="flex-1 text-left">
-                <p className={`font-medium transition-all ${done ? "text-white line-through opacity-50" : "text-white drop-shadow-md"}`}>
-                  {task.label}
-                </p>
-                <p className="text-xs text-white/80 drop-shadow-md">{task.desc}</p>
-              </div>
-            </div>
-          </button>
-        );
-      })}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };
