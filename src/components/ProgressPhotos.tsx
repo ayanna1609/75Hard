@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Camera, Plus, Trash2, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Camera, Plus, Trash2, X, AlertCircle } from "lucide-react";
 
 const ProgressPhotos = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [photos, setPhotos] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -15,11 +17,20 @@ const ProgressPhotos = () => {
   }, [user]);
 
   const loadPhotos = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("progress_photos")
       .select("*")
       .eq("user_id", user!.id)
       .order("photo_date", { ascending: true });
+
+    if (error) {
+      console.error("Failed to load photos:", error);
+      toast({
+        title: "Failed to load photos",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
     setPhotos(data || []);
   };
 
@@ -27,38 +38,102 @@ const ProgressPhotos = () => {
     if (!user) return;
     setUploading(true);
 
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/${Date.now()}.${ext}`;
+    try {
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image under 10MB.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    const { error: uploadError } = await supabase.storage
-      .from("progress-photos")
-      .upload(path, file);
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}.${ext}`;
 
-    if (uploadError) {
-      console.error(uploadError);
+      const { error: uploadError } = await supabase.storage
+        .from("progress-photos")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        toast({
+          title: "Upload failed",
+          description: uploadError.message || "Could not upload photo. Check Supabase storage bucket settings.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("progress-photos")
+        .getPublicUrl(path);
+
+      const { error: dbError } = await supabase.from("progress_photos").insert({
+        user_id: user.id,
+        photo_url: urlData.publicUrl,
+        day_number: photos.length + 1,
+        photo_date: new Date().toLocaleDateString("en-CA"), // YYYY-MM-DD in local time
+      });
+
+      if (dbError) {
+        console.error("Database insert error:", dbError);
+        toast({
+          title: "Failed to save photo",
+          description: dbError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await loadPhotos();
+      toast({
+        title: "Photo uploaded! 📸",
+        description: `Day ${photos.length + 1} progress photo saved.`,
+      });
+    } finally {
       setUploading(false);
+      // Reset file input so the same file can be selected again
+      if (fileRef.current) {
+        fileRef.current.value = "";
+      }
+    }
+  };
+
+  const deletePhoto = async (id: string, photoUrl: string) => {
+    // Extract storage path from the URL
+    try {
+      const urlObj = new URL(photoUrl);
+      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/progress-photos\/(.+)/);
+      if (pathMatch) {
+        const storagePath = pathMatch[1];
+        await supabase.storage.from("progress-photos").remove([storagePath]);
+      }
+    } catch (e) {
+      console.warn("Could not delete from storage:", e);
+    }
+
+    const { error } = await supabase.from("progress_photos").delete().eq("id", id);
+    if (error) {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
       return;
     }
 
-    const { data: urlData } = supabase.storage
-      .from("progress-photos")
-      .getPublicUrl(path);
-
-    await supabase.from("progress_photos").insert({
-      user_id: user.id,
-      photo_url: urlData.publicUrl,
-      day_number: photos.length + 1,
-      photo_date: new Date().toISOString().split("T")[0],
-    });
-
-    await loadPhotos();
-    setUploading(false);
-  };
-
-  const deletePhoto = async (id: string) => {
-    await supabase.from("progress_photos").delete().eq("id", id);
     await loadPhotos();
     setSelectedPhoto(null);
+    toast({
+      title: "Photo deleted",
+      description: "Progress photo removed successfully.",
+    });
   };
 
   return (
@@ -103,7 +178,15 @@ const ProgressPhotos = () => {
                 src={photo.photo_url}
                 alt={`Day ${photo.day_number}`}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                  target.nextElementSibling?.removeAttribute("style");
+                }}
               />
+              <div className="hidden absolute inset-0 items-center justify-center bg-muted">
+                <AlertCircle className="w-6 h-6 text-muted-foreground" />
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="absolute bottom-1 left-2 text-xs font-semibold text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                 Day {photo.day_number}
@@ -126,7 +209,7 @@ const ProgressPhotos = () => {
               <img src={photo.photo_url} alt="" className="w-full rounded-xl" />
               <div className="absolute top-4 right-4 flex gap-2">
                 <button
-                  onClick={() => deletePhoto(photo.id)}
+                  onClick={() => deletePhoto(photo.id, photo.photo_url)}
                   className="p-2 rounded-full bg-destructive/80 text-destructive-foreground hover:bg-destructive transition-all"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -139,7 +222,7 @@ const ProgressPhotos = () => {
                 </button>
               </div>
               <p className="text-center mt-3 text-muted-foreground text-sm">
-                Day {photo.day_number} • {new Date(photo.photo_date).toLocaleDateString()}
+                Day {photo.day_number} • {new Date(photo.photo_date + "T00:00:00").toLocaleDateString()}
               </p>
             </div>
           </div>

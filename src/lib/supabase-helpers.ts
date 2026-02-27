@@ -34,25 +34,40 @@ export function getDayNumber(startDate: string | null): number {
 export function getStreak(checkins: any[]): number {
   if (!checkins.length) return 0;
 
+  const isComplete = (c: any) =>
+    c.diet && c.water && c.reading && c.workout1 && c.workout2_outdoor && c.progress_photo && c.no_alcohol;
+
   const sorted = [...checkins].sort(
     (a, b) => new Date(b.check_date).getTime() - new Date(a.check_date).getTime()
   );
 
-  let streak = 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // Check if today has a completed check-in
+  const todayCheckin = sorted.find((c) => {
+    const d = new Date(c.check_date);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  });
+
+  // Determine starting point: today (if complete) or yesterday
+  const startDate = todayCheckin && isComplete(todayCheckin) ? today : yesterday;
+
+  let streak = 0;
   for (let i = 0; i < sorted.length; i++) {
     const checkDate = new Date(sorted[i].check_date);
     checkDate.setHours(0, 0, 0, 0);
 
-    const expectedDate = new Date(today);
+    const expectedDate = new Date(startDate);
     expectedDate.setDate(expectedDate.getDate() - i);
 
     if (checkDate.getTime() !== expectedDate.getTime()) break;
 
-    const c = sorted[i];
-    if (c.diet && c.water && c.reading && c.workout1 && c.workout2_outdoor && c.progress_photo && c.no_alcohol) {
+    if (isComplete(sorted[i])) {
       streak++;
     } else {
       break;

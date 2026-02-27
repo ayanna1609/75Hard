@@ -36,7 +36,7 @@ const DailyChecklist = ({ onUpdate }: Props) => {
   });
   const [animatingKey, setAnimatingKey] = useState<string | null>(null);
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local timezone
 
   useEffect(() => {
     if (!user) return;
@@ -109,17 +109,15 @@ const DailyChecklist = ({ onUpdate }: Props) => {
           <button
             key={task.key}
             onClick={() => toggleTask(task.key)}
-            className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 ${
-              done
+            className={`w-full flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 ${done
                 ? "border-primary/50 bg-primary/10"
                 : "border-border bg-secondary/50 hover:border-muted-foreground/30"
-            }`}
+              }`}
             style={{ animationDelay: `${i * 0.05}s` }}
           >
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                done ? "gradient-green glow-green" : "bg-muted"
-              } ${animatingKey === task.key ? "animate-check" : ""}`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${done ? "gradient-green glow-green" : "bg-muted"
+                } ${animatingKey === task.key ? "animate-check" : ""}`}
             >
               {done ? (
                 <Check className="w-5 h-5 text-primary-foreground" />
