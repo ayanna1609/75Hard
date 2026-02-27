@@ -53,7 +53,7 @@ const ProgressPhotos = () => {
       const path = `${user.id}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("progress-photos")
+        .from("progress-photo")
         .upload(path, file, {
           cacheControl: "3600",
           upsert: false,
@@ -71,7 +71,7 @@ const ProgressPhotos = () => {
       }
 
       const { data: urlData } = supabase.storage
-        .from("progress-photos")
+        .from("progress-photo")
         .getPublicUrl(path);
 
       const { error: dbError } = await supabase.from("progress_photos").insert({
@@ -109,10 +109,10 @@ const ProgressPhotos = () => {
     // Extract storage path from the URL
     try {
       const urlObj = new URL(photoUrl);
-      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/progress-photos\/(.+)/);
+      const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/progress-photo\/(.+)/);
       if (pathMatch) {
         const storagePath = pathMatch[1];
-        await supabase.storage.from("progress-photos").remove([storagePath]);
+        await supabase.storage.from("progress-photo").remove([storagePath]);
       }
     } catch (e) {
       console.warn("Could not delete from storage:", e);
